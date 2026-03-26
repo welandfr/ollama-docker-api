@@ -1,0 +1,39 @@
+# Set the port and model in local .env file; 
+#	OLLAMA_PORT=11434
+#	OLLAMA_MODEL=qwen3.5:9b 
+#
+# Remove the model data after changing models:
+#    docker compose down
+#    docker volume rm $(docker volume ls -q | grep ollama_api_data)
+#
+# test:
+# curl http://localhost:11434/api/generate -d '{ "model": "qwen3.5:2b", "stream": false, "prompt": "Explain Docker in one paragraph." }' 
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT-11434}:11434"
+    environment:
+      - OLLAMA_ORIGINS=*
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ollama_api_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    entrypoint: >
+      /bin/sh -c "
+      ollama serve &
+      sleep 5 &&
+      ollama pull ${OLLAMA_MODEL:-qwen3.5:2b} &&
+      wait
+      "
+
+volumes:
+  ollama_api_data:
