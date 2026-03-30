@@ -5,6 +5,15 @@ X-API-Key: {{$dotenv OLLAMA_API_KEY}}
 
 {
   "model": "{{$dotenv OLLAMA_MODEL}}",
-  "prompt": "Explain Docker in one paragraph.",
+  "prompt": "Hello.",
   "stream": false
 }
+
+### List models
+GET {{$dotenv OLLAMA_API_URL}}/api/tags
+X-API-Key: {{$dotenv OLLAMA_API_KEY}}
+
+### Ollama version
+GET {{$dotenv OLLAMA_API_URL}}/api/version
+X-API-Key: {{$dotenv OLLAMA_API_KEY}}
+
