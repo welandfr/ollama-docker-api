@@ -1,0 +1,26 @@
+# can be run on forwarding server. 
+# Uses letsencrypt automatically
+my-domain.com {
+
+    # API key protection
+    @unauthorized {
+        not header X-API-Key my-secret-key-123
+    }
+
+    handle @unauthorized {
+        respond "Forbidden" 403
+    }
+
+    # Forward everything else to the Ollama server
+    # replace ollama with internal IP if caddy is used on a forwarding server
+    reverse_proxy ollama:11444 {
+        header_up X-Forwarded-Host {host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # CORS headers
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, X-API-Key"
+}
+

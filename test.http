@@ -1,0 +1,10 @@
+### Test Ollama API with API Key
+POST {{$dotenv OLLAMA_API_URL}}/api/generate
+Content-Type: application/json
+X-API-Key: {{$dotenv OLLAMA_API_KEY}}
+
+{
+  "model": "{{$dotenv OLLAMA_MODEL}}",
+  "prompt": "Explain Docker in one paragraph.",
+  "stream": false
+}
