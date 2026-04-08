@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ollama Test</title>
+    <style>
+        input[type=text] {
+            width: 500px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Ollama CORS tester</h2>
+
+    Base URL: <input type="text" id="baseUrl" value="" placeholder="https://SERVER.kaj.poutavm.fi"><br>
+    API Key: <input type="text" id="apiKey" placeholder="Enter API key"><br>
+    Model: <input type="text" id="model" value="qwen3.5:9b"><br>
+    Prompt: <input type="text" id="prompt" value="Hello!"><br>
+
+    <button id="callBtn">Send Request</button>
+
+    <h3>Result:</h3>
+    <div id="result"></div>
+
+    <script>
+        async function callOllama() {
+            const baseUrl = document.getElementById("baseUrl").value;
+            const apiKey = document.getElementById("apiKey").value;
+            const model = document.getElementById("model").value;
+            const prompt = document.getElementById("prompt").value;
+            const resultDiv = document.getElementById("result");
+
+            resultDiv.textContent = "Loading...";
+
+            try {
+                const response = await fetch(baseUrl + "/api/generate", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-API-Key": apiKey
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        prompt: prompt,
+                        stream: false
+                    })
+                });
+
+                const data = await response.json();
+                resultDiv.textContent = data.response || JSON.stringify(data);
+
+            } catch (error) {
+                resultDiv.textContent = "Error: " + error.message;
+            }
+        }
+
+        document.getElementById("callBtn").addEventListener("click", callOllama);
+    </script>
+
+</body>
+
+</html>
