@@ -1,10 +1,23 @@
-# can be run on forwarding server. 
-# Uses letsencrypt automatically
-my-domain.com {
+# Forwarding Caddyfile that allows CORS
 
+my.server.com {
+
+    # Handle preflight OPTIONS requests
+    @preflight {
+        method OPTIONS
+    }
+    handle @preflight {
+        respond "" 204
+        header {
+            Access-Control-Allow-Origin "*"
+            Access-Control-Allow-Methods "GET, POST, OPTIONS"
+            Access-Control-Allow-Headers "Content-Type, X-API-Key"
+        }
+    }
     # API key protection
     @unauthorized {
-        not header X-API-Key my-secret-key-123
+        not header X-API-Key secret-api-key1
+        not header X-API-Key secret-api-key2
     }
 
     handle @unauthorized {
@@ -12,15 +25,15 @@ my-domain.com {
     }
 
     # Forward everything else to the Ollama server
-    # replace ollama with internal IP if caddy is used on a forwarding server
-    reverse_proxy ollama:11444 {
+    reverse_proxy 10.10.24.10:11444 {
         header_up X-Forwarded-Host {host}
         header_up X-Forwarded-Proto {scheme}
+	    # CORS headers
+        header_down Access-Control-Allow-Origin "*"
+        header_down Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        header_down Access-Control-Allow-Headers "Content-Type, X-API-Key"
+
     }
 
-    # CORS headers
-    header Access-Control-Allow-Origin "*"
-    header Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    header Access-Control-Allow-Headers "Content-Type, X-API-Key"
 }
 
