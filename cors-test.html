@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Ollama Test</title>
+    <title>Ollama CORS Tester</title>
     <style>
         input[type=text] {
             width: 500px;
@@ -12,10 +12,10 @@
 </head>
 
 <body>
-    <h2>Ollama CORS tester</h2>
+    <h2>Ollama CORS Tester</h2>
 
     Base URL: <input type="text" id="baseUrl" value="" placeholder="https://SERVER.kaj.poutavm.fi"><br>
-    API Key: <input type="text" id="apiKey" placeholder="Enter API key"><br>
+    API Key: <input type="password" id="apiKey" placeholder="Enter API key"><br>
     Model: <input type="text" id="model" value="qwen3.5:9b"><br>
     Prompt: <input type="text" id="prompt" value="Hello!"><br>
 
@@ -35,7 +35,7 @@
             resultDiv.textContent = "Loading...";
 
             try {
-                const response = await fetch(baseUrl + "/api/generate", {
+                const res = await fetch(baseUrl + "/api/generate", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -48,7 +48,7 @@
                     })
                 });
 
-                const data = await response.json();
+                const data = await res.json();
                 resultDiv.textContent = data.response || JSON.stringify(data);
 
             } catch (error) {
