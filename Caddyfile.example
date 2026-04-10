@@ -2,6 +2,9 @@
 
 my.server.com {
 
+    # Normalize double slashes
+    uri replace // /
+
     # Handle preflight OPTIONS requests
     @preflight {
         method OPTIONS
