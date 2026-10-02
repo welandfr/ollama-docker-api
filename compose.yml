@@ -21,6 +21,15 @@ services:
       ollama serve &
       sleep 5 &&
       ollama pull ${OLLAMA_MODEL:-qwen-3.5:2b} &&
+      echo '' &&
+      echo '==========================================================' &&
+      echo '  Ollama is ready. Installed models (works right away):' &&
+      echo '  http://localhost:${OLLAMA_PORT:-11434}/api/tags' &&
+      echo '' &&
+      echo '  Models loaded in memory (empty until first request):' &&
+      echo '  http://localhost:${OLLAMA_PORT:-11434}/api/ps' &&
+      echo '==========================================================' &&
+      echo '' &&
       wait
       "
 
