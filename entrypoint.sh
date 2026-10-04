@@ -1,6 +1,9 @@
 #!/bin/sh
-# Container entrypoint: start the Ollama server, pull every model in the list,
-# then stay in the foreground.
+# Runs INSIDE the container, as its entrypoint (mounted by compose.yml). Not
+# meant to be run by hand — on the host you want ./up.sh.
+#
+# Starts the Ollama server, pulls every model in the list, then stays in the
+# foreground so the container keeps running.
 set -e
 
 ollama serve &

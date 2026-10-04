@@ -1,6 +1,8 @@
 #!/bin/sh
-# Start the Ollama container detached, wait for every model pull to finish,
-# then print the URLs for testing in a browser.
+# Runs on the HOST. Starts the container detached, waits for every model pull to
+# finish, then prints the URLs and the settings the container came up with.
+#
+# The work inside the container is done by entrypoint.sh.
 set -e
 cd "$(dirname "$0")"
 

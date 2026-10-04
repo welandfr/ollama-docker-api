@@ -39,7 +39,7 @@ services:
       - HOST_PORT=${OLLAMA_PORT:-11434}
     volumes:
       - ollama_api_data:/root/.ollama
-      - ./start.sh:/opt/start.sh:ro
+      - ./entrypoint.sh:/opt/entrypoint.sh:ro
     ports:
       # The API has no authentication, so the bind address is a real choice.
       # Default publishes on every interface; set OLLAMA_BIND to a WireGuard or
@@ -52,7 +52,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    entrypoint: ["/bin/sh", "/opt/start.sh"]
+    entrypoint: ["/bin/sh", "/opt/entrypoint.sh"]
 
 volumes:
   ollama_api_data:

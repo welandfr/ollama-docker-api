@@ -8,6 +8,15 @@ models are installed — not how many are running.
 Settings live in a local `.env`; `compose.yml` supplies defaults for everything
 optional. Start with `./up.sh`.
 
+| File | Runs where | Does what |
+| --- | --- | --- |
+| `up.sh` | host | what you run: brings the container up, waits for the model pulls, prints the URLs and the settings it came up with |
+| `entrypoint.sh` | inside the container | its entrypoint, mounted by `compose.yml`: starts `ollama serve`, pulls the model list, stays in the foreground. Not run by hand |
+| `compose.yml` | host | the service definition and the defaults for every optional setting |
+| `test.http` | host | requests for all three API shapes, including the one Claude Code uses |
+| `cors-test.html` | browser | checks `OLLAMA_ORIGINS` allows cross-origin requests |
+| `Caddyfile.example` | host | optional front end adding API-key auth and CORS headers |
+
 ## Set the port and models
 
 ```sh
