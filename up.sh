@@ -1,25 +1,38 @@
 #!/bin/sh
-# Start the Ollama container detached, wait for the model pull to finish,
+# Start the Ollama container detached, wait for every model pull to finish,
 # then print the URLs for testing in a browser.
 set -e
 cd "$(dirname "$0")"
 
 [ -f .env ] && { set -a; . ./.env; set +a; }
 PORT=${OLLAMA_PORT:-11434}
-MODEL=${OLLAMA_MODEL:-qwen-3.5:2b}
+MODELS=${OLLAMA_MODEL_LIST:-${OLLAMA_MODEL:-qwen3.5:2b}}
+MODELS=$(echo "$MODELS" | tr ',' ' ')
 TIMEOUT=${UP_TIMEOUT:-900}
 
 docker compose up -d "$@"
 
-printf 'waiting for %s ' "$MODEL"
+printf 'waiting for: %s ' "$MODELS"
 i=0
 while [ "$i" -lt "$TIMEOUT" ]; do
-  if curl -fsS "http://localhost:$PORT/api/tags" 2>/dev/null | grep -qF "$MODEL"; then
+  tags=$(curl -fsS "http://localhost:$PORT/api/tags" 2>/dev/null || true)
+  missing=0
+  for m in $MODELS; do
+    echo "$tags" | grep -qF "$m" || missing=1
+  done
+  if [ "$missing" -eq 0 ] && [ -n "$tags" ]; then
     printf '\n\n'
     echo '=========================================================='
     echo '  Ollama ready:'
-    echo "  http://localhost:$PORT/api/tags   (installed models)"
+    echo "  http://localhost:$PORT/api/tags   (installed, all servable)"
     echo "  http://localhost:$PORT/api/ps     (loaded in memory)"
+    echo ''
+    echo "  Context: ${OLLAMA_CONTEXT_LENGTH:-unset — Ollama picks from VRAM (4k under 24GiB)}"
+    echo "  KV cache: ${OLLAMA_KV_CACHE_TYPE:-f16}, flash attention: ${OLLAMA_FLASH_ATTENTION:-0}"
+    echo "  Resident models: ${OLLAMA_MAX_LOADED_MODELS:-1}, parallel slots: ${OLLAMA_NUM_PARALLEL:-1}"
+    echo ''
+    echo '  After the first request, confirm PROCESSOR reads 100% GPU:'
+    echo '    docker compose exec ollama ollama ps'
     echo '=========================================================='
     echo ''
     exit 0
@@ -30,7 +43,7 @@ while [ "$i" -lt "$TIMEOUT" ]; do
 done
 
 printf '\n\n'
-echo "Timed out after ${TIMEOUT}s waiting for $MODEL."
-echo 'The pull may still be running: docker compose logs -f ollama'
+echo "Timed out after ${TIMEOUT}s waiting for: $MODELS"
+echo 'A pull may still be running: docker compose logs -f ollama'
 echo ''
 echo "  http://localhost:$PORT/api/tags"

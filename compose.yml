@@ -5,10 +5,46 @@ services:
       - OLLAMA_ORIGINS=*
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # Models to pull on startup. Comma- or space-separated.
+      - OLLAMA_MODEL_LIST=${OLLAMA_MODEL_LIST:-}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-}
+
+      # --- Context window -------------------------------------------------
+      # Ollama's own default is picked from VRAM: 4k below 24 GiB, which is far
+      # too small for coding agents — their system prompt and tool schemas alone
+      # run to roughly 15k tokens. Ollama's docs put the floor at 64k.
+      # A client may still override this per request (Ollama's native API takes
+      # options.num_ctx); this is the default for clients that do not, which
+      # includes the Anthropic-compatible /v1/messages endpoint.
+      - OLLAMA_CONTEXT_LENGTH=${OLLAMA_CONTEXT_LENGTH:-65536}
+
+      # KV cache grows with the context window, and at 64k an f16 cache does not
+      # fit beside a 9B model on a 16 GB card. q8_0 roughly halves it for a small
+      # quality loss; flash attention is required for the quantized cache.
+      - OLLAMA_FLASH_ATTENTION=${OLLAMA_FLASH_ATTENTION:-1}
+      - OLLAMA_KV_CACHE_TYPE=${OLLAMA_KV_CACHE_TYPE:-q8_0}
+
+      # --- VRAM budget ----------------------------------------------------
+      # One model at a time. A 9B model at q4 is ~6.5 GB of weights plus ~4 GB of
+      # q8_0 KV cache at 64k, so ~10.5 GB of a 16 GB card — two resident models
+      # would not fit. Ollama evicts the idle model when another is requested.
+      - OLLAMA_MAX_LOADED_MODELS=${OLLAMA_MAX_LOADED_MODELS:-1}
+      # How long an idle model stays loaded before being unloaded.
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE:-5m}
+      # Each parallel slot gets its own KV cache, so this multiplies the memory
+      # the context window costs. Leave at 1 unless you have VRAM to spare.
+      - OLLAMA_NUM_PARALLEL=${OLLAMA_NUM_PARALLEL:-1}
+
+      # Only used for the URLs printed at startup.
+      - HOST_PORT=${OLLAMA_PORT:-11434}
     volumes:
       - ollama_api_data:/root/.ollama
+      - ./start.sh:/opt/start.sh:ro
     ports:
-      - ${OLLAMA_PORT:-11434}:11434
+      # The API has no authentication, so the bind address is a real choice.
+      # Default publishes on every interface; set OLLAMA_BIND to a WireGuard or
+      # LAN address to confine it, or 127.0.0.1 for local-only.
+      - ${OLLAMA_BIND:-0.0.0.0}:${OLLAMA_PORT:-11434}:11434
     deploy:
       resources:
         reservations:
@@ -16,22 +52,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    entrypoint: >
-      /bin/sh -c "
-      ollama serve &
-      sleep 5 &&
-      ollama pull ${OLLAMA_MODEL:-qwen-3.5:2b} &&
-      echo '' &&
-      echo '==========================================================' &&
-      echo '  Ollama is ready. Installed models (works right away):' &&
-      echo '  http://localhost:${OLLAMA_PORT:-11434}/api/tags' &&
-      echo '' &&
-      echo '  Models loaded in memory (empty until first request):' &&
-      echo '  http://localhost:${OLLAMA_PORT:-11434}/api/ps' &&
-      echo '==========================================================' &&
-      echo '' &&
-      wait
-      "
+    entrypoint: ["/bin/sh", "/opt/start.sh"]
 
 volumes:
   ollama_api_data:

@@ -1,4 +1,16 @@
-### Test Ollama API with API Key
+### List models (installed, all servable)
+GET {{$dotenv OLLAMA_API_URL}}/api/tags
+X-API-Key: {{$dotenv OLLAMA_API_KEY}}
+
+### Loaded in VRAM right now — check CONTEXT and the GPU/CPU split here
+GET {{$dotenv OLLAMA_API_URL}}/api/ps
+X-API-Key: {{$dotenv OLLAMA_API_KEY}}
+
+### Ollama version
+GET {{$dotenv OLLAMA_API_URL}}/api/version
+X-API-Key: {{$dotenv OLLAMA_API_KEY}}
+
+### Generate (Ollama's own API)
 POST {{$dotenv OLLAMA_API_URL}}/api/generate
 Content-Type: application/json
 X-API-Key: {{$dotenv OLLAMA_API_KEY}}
@@ -9,11 +21,49 @@ X-API-Key: {{$dotenv OLLAMA_API_KEY}}
   "stream": false
 }
 
-### List models
-GET {{$dotenv OLLAMA_API_URL}}/api/tags
+### Chat with an explicit context window, overriding OLLAMA_CONTEXT_LENGTH
+POST {{$dotenv OLLAMA_API_URL}}/api/chat
+Content-Type: application/json
 X-API-Key: {{$dotenv OLLAMA_API_KEY}}
 
-### Ollama version
-GET {{$dotenv OLLAMA_API_URL}}/api/version
-X-API-Key: {{$dotenv OLLAMA_API_KEY}}
+{
+  "model": "{{$dotenv OLLAMA_MODEL}}",
+  "messages": [{ "role": "user", "content": "Hello." }],
+  "stream": false,
+  "options": { "num_ctx": 65536 }
+}
 
+### Anthropic-compatible endpoint — what Claude Code talks to
+POST {{$dotenv OLLAMA_API_URL}}/v1/messages
+Content-Type: application/json
+x-api-key: ollama
+anthropic-version: 2023-06-01
+
+{
+  "model": "{{$dotenv OLLAMA_MODEL}}",
+  "max_tokens": 64,
+  "messages": [{ "role": "user", "content": "Reply with one short sentence." }]
+}
+
+### Anthropic-compatible endpoint with a tool, to check tool calling works
+POST {{$dotenv OLLAMA_API_URL}}/v1/messages
+Content-Type: application/json
+x-api-key: ollama
+anthropic-version: 2023-06-01
+
+{
+  "model": "{{$dotenv OLLAMA_MODEL}}",
+  "max_tokens": 256,
+  "tools": [
+    {
+      "name": "read_file",
+      "description": "Read a file from disk",
+      "input_schema": {
+        "type": "object",
+        "properties": { "path": { "type": "string" } },
+        "required": ["path"]
+      }
+    }
+  ],
+  "messages": [{ "role": "user", "content": "Read the file config.toml" }]
+}
