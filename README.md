@@ -20,7 +20,7 @@ optional. Start with `./up.sh`.
 ## Set the port and models
 
 ```sh
-OLLAMA_PORT=8844
+OLLAMA_PORT=11434
 OLLAMA_MODEL_LIST=ornith-1.5:9b,qwen3.5:9b
 ```
 
@@ -117,7 +117,7 @@ Three APIs on the same port:
 For Claude Code, point it straight here; no proxy is needed:
 
 ```sh
-ANTHROPIC_BASE_URL=http://localhost:8844 \
+ANTHROPIC_BASE_URL=http://localhost:11434 \
 ANTHROPIC_AUTH_TOKEN=ollama \
 ANTHROPIC_API_KEY="" \
 CLAUDE_CODE_MAX_CONTEXT_TOKENS=65536 \
@@ -154,6 +154,29 @@ docker compose exec ollama ollama pull mistral:7b
 
 Add it to `OLLAMA_MODEL_LIST` too, so it survives a volume wipe.
 
+## Remove a model
+
+```sh
+docker compose exec ollama ollama list     # installed, with sizes
+docker compose exec ollama ollama ps       # loaded right now
+docker compose exec ollama ollama rm qwen3:8b
+```
+
+**Remove it from `OLLAMA_MODEL_LIST` too**, or `entrypoint.sh` pulls it straight
+back on the next `./up.sh`.
+
+There is no `ollama prune`. `ollama rm` is the only removal command; it drops the
+blobs no remaining model references, since models sharing identical layers share
+them on disk. Blobs orphaned by an interrupted pull are not cleaned up by any
+command — wiping the volume below is the only way to reclaim those.
+
+Disk in use:
+
+```sh
+docker compose exec ollama du -sh /root/.ollama/models
+docker system df -v | grep ollama_api_data
+```
+
 ## Remove the model data after changing models
 
 ```sh
@@ -166,14 +189,14 @@ docker volume rm $(docker volume ls -q | grep ollama_api_data)
 `test.http` covers all of this; by hand:
 
 ```sh
-curl http://localhost:8844/api/tags     # installed, all servable
-curl http://localhost:8844/api/ps       # loaded in VRAM, with CONTEXT
+curl http://localhost:11434/api/tags     # installed, all servable
+curl http://localhost:11434/api/ps       # loaded in VRAM, with CONTEXT
 
-curl http://localhost:8844/api/generate -d '{
+curl http://localhost:11434/api/generate -d '{
   "model": "ornith-1.5:9b", "stream": false, "prompt": "Explain Docker in one paragraph." }'
 
 # the endpoint Claude Code uses
-curl http://localhost:8844/v1/messages \
+curl http://localhost:11434/v1/messages \
   -H 'content-type: application/json' -H 'anthropic-version: 2023-06-01' \
   -d '{ "model": "ornith-1.5:9b", "max_tokens": 64,
         "messages": [{ "role": "user", "content": "Hello." }] }'
