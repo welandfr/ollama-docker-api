@@ -129,11 +129,12 @@ it Claude Code assumes a 200k window for a model it does not recognise and
 compacts at that, growing prompts past what Ollama accepts — which Ollama then
 truncates silently.
 
-The sibling `claude-ollama` project does the same job through a local proxy. It
-is worth running instead of the direct connection when you want per-request
-control of `num_ctx` without changing this server, or the per-request logging it
-produces; the direct connection is simpler and keeps web search and web fetch,
-which that proxy drops.
+The sibling `claude-ollama` project is a launcher for exactly this connection
+(it was a proxy until 15 October 2026, and is not any more). It sets the rest of
+what Claude Code needs against a local model — the model names, an output cap
+that stops it compacting at half the window, the telemetry and isolation
+switches — and refuses to start if this server's window, as `/api/ps` reports
+it, is smaller than the one Claude Code is told about.
 
 ## Start
 
